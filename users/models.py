@@ -15,3 +15,9 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class Profile(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    avatar = models.ImageField(null=True, blank=True)
+    last_online = models.DateTimeField()
