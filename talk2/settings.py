@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # third_party
     'rest_framework',
     'drf_yasg',
+    'channels',
 
     # internal
     'chats',
