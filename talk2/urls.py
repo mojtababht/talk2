@@ -24,6 +24,7 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
 from chats.api.urls import router as chat_router, message_router
+from users.api.urls import router as user_router
 
 
 schema_view = get_schema_view(
@@ -41,6 +42,7 @@ schema_view = get_schema_view(
 
 router = DefaultRouter()
 router.registry.extend(chat_router.registry)
+router.registry.extend(user_router.registry)
 
 
 urlpatterns = [
