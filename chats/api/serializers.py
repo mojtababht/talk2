@@ -1,8 +1,7 @@
-from django.db.models import Q
 from django.db.models import Count
 from rest_framework import serializers
 
-from ..models import Chat
+from ..models import Chat, Message
 
 
 class ProfileSerializer(serializers.Serializer):
@@ -60,3 +59,26 @@ class UpdateChatSerializer(serializers.ModelSerializer):
         if instance.members.count() == 2:
             raise serializers.ValidationError('regular chat can not change')
         return super().update(instance, validated_data)
+
+
+class CreateMessageSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Message
+        fields = ('id', 'user', 'text', 'created_at_date', 'created_at_time',
+                  'updated_at_date', 'updated_at_time')
+
+    @property
+    def validated_data(self):
+        validated_data = super().validated_data
+        validated_data.update({'chat_id': self.context.get('chat_id')})
+        return validated_data
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    user = serializers.SlugField()
+
+    class Meta:
+        model = Message
+        fields = ('id', 'user', 'text', 'created_at_date', 'created_at_time', 'updated_at_date', 'updated_at_time')
