@@ -22,6 +22,7 @@ from rest_framework import permissions
 from rest_framework.routers import DefaultRouter
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from chats.api.urls import router as chat_router, message_router
 from users.api.urls import router as user_router
@@ -52,6 +53,7 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('api/', include(router.urls)),
     path('api/', include(message_router.urls)),
+    path('api/auth/refresh/', TokenRefreshView.as_view())
 ]
 
 if settings.DEBUG:

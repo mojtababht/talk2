@@ -4,10 +4,12 @@ from rest_framework.decorators import action
 from drf_yasg.utils import swagger_auto_schema
 
 from .serializers import LoginSerializer, SignUpSerializer
+from .permissions import NeedToNotAuthenticate
 from ..models import User
 
 
 class AuthViewSet(viewsets.ViewSet):
+    permission_classes = (NeedToNotAuthenticate,)
 
     @swagger_auto_schema(method='post', request_body=LoginSerializer, responses={
         status.HTTP_200_OK: "{'access': 'string', 'refresh': 'string'}",
