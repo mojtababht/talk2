@@ -26,12 +26,12 @@ SECRET_KEY = 'django-insecure-ioa0z%*i$fio==xl$81z##mxvy5gv@7ugr5w1^)wicnpqkv3xy
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
-
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'chats',
     'users',
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -77,8 +78,19 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'talk2.wsgi.application'
+# WSGI_APPLICATION = 'talk2.wsgi.application'
 
+ASGI_APPLICATION = "talk2.asgi.application"
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

@@ -9,14 +9,22 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 
 import os
 
-from channels.routing import ProtocolTypeRouter
+from reusable.middlewares import JWTAuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.security.websocket import AllowedHostsOriginValidator
 from django.core.asgi import get_asgi_application
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "talk2.settings")
 
 django_asgi_app = get_asgi_application()
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "talk2.settings")
-application = ProtocolTypeRouter({
-    "http": django_asgi_app,
-})
+import chats.ws.routing
 
-ASGI_APPLICATION = 'talk2.asgi.application'
+application = ProtocolTypeRouter(
+    {
+        "http": django_asgi_app,
+        "websocket": AllowedHostsOriginValidator(
+            JWTAuthMiddlewareStack(URLRouter(chats.ws.routing.websocket_urlpatterns))
+        ),
+    }
+)
