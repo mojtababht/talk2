@@ -8,6 +8,9 @@ class ProfileSerializer(serializers.Serializer):
     avatar = serializers.ImageField()
     last_online = serializers.DateTimeField()
 
+    class Meta:
+        ref_name = 'chat-profile'
+
 
 class MemberSerializer(serializers.Serializer):
     id = serializers.UUIDField()

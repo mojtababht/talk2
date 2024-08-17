@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from ..models import User
+from ..models import User, Profile
 
 
 class LoginSerializer(serializers.Serializer):
@@ -23,3 +23,17 @@ class SignUpSerializer(serializers.Serializer):
         if not attrs['password'] == attrs['password_repeat']:
             raise serializers.ValidationError('password and password_repeat does not match')
         return attrs
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ('avatar', 'is_online', 'last_online')
+
+
+class UserSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'profile')
