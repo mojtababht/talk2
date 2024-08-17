@@ -1,4 +1,5 @@
 from django.db.models import Count
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from ..models import Chat, Message
@@ -21,19 +22,44 @@ class MemberSerializer(serializers.Serializer):
 
 
 class ChatSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
     members = MemberSerializer(many=True)
 
     class Meta:
         model = Chat
-        fields = ('id', 'members')
+        fields = ('id', 'name', 'avatar', 'members')
+
+    def get_name(self, obj):
+        if obj.name:
+            name = obj.name
+        else:
+            other = obj.members.exclude(id=self.context['request'].user.id).first()
+            if other.first_name:
+                name = other.first_name
+            else:
+                name = other.username
+        return name
+
+    def get_avatar(self, obj):
+        if obj.avatar:
+            avatar = obj.avatar
+        else:
+            avatar = obj.members.exclude(id=self.context['request'].user.id).first().profile.avatar
+        if avatar:
+            if request := self.context["request"]:
+                return request.build_absolute_uri(avatar)
+            return avatar
+        return None
 
 
 class CreateChatSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    members = serializers.SlugRelatedField(many=True, queryset=get_user_model().objects.all(), slug_field='username')
 
     class Meta:
         model = Chat
-        fields = ('id', 'members', 'user')
+        fields = ('id', 'members', 'user', 'name', 'avatar')
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -49,6 +75,10 @@ class CreateChatSerializer(serializers.ModelSerializer):
         validated_data = super().validated_data
         user = validated_data.pop('user')
         validated_data['members'].append(user)
+        validated_data['members'] = list(set(validated_data['members']))
+        if len(validated_data['members']) == 2:
+            validated_data.pop('name', None)
+            validated_data.pop('avatar', None)
         return validated_data
 
 

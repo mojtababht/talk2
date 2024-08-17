@@ -41,4 +41,4 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     avatar = models.ImageField(null=True, blank=True)
     is_online = models.BooleanField(default=False)
-    last_online = models.DateTimeField()
+    last_online = models.DateTimeField(null=True, blank=True)

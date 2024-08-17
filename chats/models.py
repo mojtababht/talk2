@@ -6,6 +6,7 @@ from django.conf import settings
 
 class Chat(models.Model):
     name = models.CharField(max_length=50, null=True, blank=True)
+    avatar = models.ImageField(null=True, blank=True)
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='chats')
 

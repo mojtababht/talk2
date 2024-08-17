@@ -1,13 +1,15 @@
 from rest_framework import viewsets, permissions
 
 from ..models import Chat, Message
-from .serializers import CreateChatSerializer, ChatSerializer, UpdateChatSerializer, CreateMessageSerializer,\
+from .serializers import CreateChatSerializer, ChatSerializer, UpdateChatSerializer, CreateMessageSerializer, \
     MessageSerializer
+from reusable.paginations import DefaultPagination
 
 
 class ChatViewSet(viewsets.ModelViewSet):
-    queryset = Chat.objects.all()
+    queryset = Chat.objects.prefetch_related('members', 'members__profile').all()
     permission_classes = (permissions.IsAuthenticated, )
+    pagination_class = DefaultPagination
 
     def get_serializer_class(self):
         match self.action:
