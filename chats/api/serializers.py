@@ -48,7 +48,7 @@ class ChatSerializer(serializers.ModelSerializer):
             avatar = obj.members.exclude(id=self.context['request'].user.id).first().profile.avatar
         if avatar:
             if request := self.context["request"]:
-                return request.build_absolute_uri(avatar)
+                return request.build_absolute_uri(avatar.url)
             return avatar
         return None
 
