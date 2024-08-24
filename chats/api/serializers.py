@@ -44,8 +44,10 @@ class ChatSerializer(serializers.ModelSerializer):
     def get_avatar(self, obj):
         if obj.avatar:
             avatar = obj.avatar
-        else:
+        elif obj.members.count() == 2:
             avatar = obj.members.exclude(id=self.context['request'].user.id).first().profile.avatar
+        else:
+            avatar = ''
         if avatar:
             if request := self.context["request"]:
                 return request.build_absolute_uri(avatar.url)
@@ -53,7 +55,7 @@ class ChatSerializer(serializers.ModelSerializer):
         return None
 
     def get_members(self, obj):
-        members = obj.members.exclude(id=self.context['request'].user.id).first()
+        members = obj.members.exclude(id=self.context['request'].user.id).all()
         return MemberSerializer(members, many=True, context=self.context).data
 
 
