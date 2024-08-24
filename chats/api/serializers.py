@@ -24,7 +24,7 @@ class MemberSerializer(serializers.Serializer):
 class ChatSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
-    members = MemberSerializer(many=True)
+    members = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
@@ -51,6 +51,10 @@ class ChatSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(avatar.url)
             return avatar
         return None
+
+    def get_members(self, obj):
+        members = obj.members.exclude(id=self.context['request'].user.id).first()
+        return MemberSerializer(members, many=True, context=self.context).data
 
 
 class CreateChatSerializer(serializers.ModelSerializer):
