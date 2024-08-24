@@ -8,6 +8,7 @@ from ..models import Chat, Message
 class ProfileSerializer(serializers.Serializer):
     avatar = serializers.ImageField()
     last_online = serializers.DateTimeField()
+    is_online = serializers.BooleanField()
 
     class Meta:
         ref_name = 'chat-profile'
@@ -116,7 +117,8 @@ class CreateMessageSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    user = serializers.SlugField()
+    user = MemberSerializer(read_only=True)
+    created_at_time = serializers.TimeField(read_only=True, format='%H:%M')
 
     class Meta:
         model = Message

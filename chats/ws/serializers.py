@@ -3,6 +3,22 @@ from rest_framework import serializers
 from ..models import Message
 
 
+class ProfileSerializer(serializers.Serializer):
+    last_online = serializers.DateTimeField()
+    is_online = serializers.BooleanField()
+
+    class Meta:
+        ref_name = 'ws-chat-profile'
+
+
+class MemberSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    username = serializers.CharField()
+    profile = ProfileSerializer()
+
+
 class CreateMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -11,7 +27,8 @@ class CreateMessageSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    user = serializers.SlugField()
+    user = MemberSerializer(read_only=True)
+    created_at_time = serializers.TimeField(read_only=True, format='%H:%M')
 
     class Meta:
         model = Message

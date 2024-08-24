@@ -5,13 +5,13 @@ from django.conf import settings
 
 
 class Chat(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False, unique=True)
     name = models.CharField(max_length=50, null=True, blank=True)
     avatar = models.ImageField(null=True, blank=True)
-    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='chats')
 
     class Meta:
-        ordering = ('-messages__created_at_date', '-messages__created_at_time')
+        ordering = ('messages__created_at_date', 'messages__created_at_time')
 
 
 class Message(models.Model):
@@ -24,4 +24,4 @@ class Message(models.Model):
     updated_at_time = models.TimeField(auto_now=True)
 
     class Meta:
-        ordering = ('-created_at_date', '-created_at_time')
+        ordering = ('created_at_date', 'created_at_time')
