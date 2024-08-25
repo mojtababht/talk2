@@ -11,7 +11,7 @@ class Chat(models.Model):
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='chats')
 
     class Meta:
-        ordering = ('messages__created_at_date', 'messages__created_at_time')
+        ordering = ('-messages__created_at_date', '-messages__created_at_time')
 
 
 class Message(models.Model):
@@ -24,4 +24,4 @@ class Message(models.Model):
     updated_at_time = models.TimeField(auto_now=True)
 
     class Meta:
-        ordering = ('created_at_date', 'created_at_time')
+        ordering = ('-created_at_date', '-created_at_time')
