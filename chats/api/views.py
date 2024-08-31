@@ -28,7 +28,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
-        return Message.objects.filter(chat=self.kwargs['chat_pk'])
+        return Message.objects.filter(chat=self.kwargs['chat_pk']).select_related('chat')
 
     def get_serializer_class(self):
         match self.action:

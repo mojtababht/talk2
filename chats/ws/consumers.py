@@ -7,6 +7,7 @@ from channels.exceptions import DenyConnection
 
 from .serializers import CreateMessageSerializer, MessageSerializer
 from ..models import Chat, Message
+from reusable.utils import encrypt_message
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -30,6 +31,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         if message := text_data_json.get("message"):
+            message = encrypt_message(message, self.chat_id)
             data = {'user': self.scope['user'].id, 'chat': self.chat.id, 'text': message}
             await self.save_message(data)
             await self.channel_layer.group_send(self.room_group_name, {"type": "chat_message", "message": message})
@@ -74,7 +76,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_messages(self):
-        messages = Message.objects.filter(chat=self.chat)
+        messages = Message.objects.filter(chat=self.chat).select_related('chat')
         return MessageSerializer(messages, many=True).data
 
 

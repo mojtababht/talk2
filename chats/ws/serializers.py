@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from ..models import Message
+from reusable.utils import decrypt_message
 
 
 class ProfileSerializer(serializers.Serializer):
@@ -29,6 +30,11 @@ class CreateMessageSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     user = MemberSerializer(read_only=True)
     created_at_time = serializers.TimeField(read_only=True, format='%H:%M')
+    text = serializers.SerializerMethodField()
+
+
+    def get_text(self, obj):
+        return decrypt_message(obj.text, obj.chat.id)
 
     class Meta:
         model = Message
