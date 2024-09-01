@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'channels',
+    "debug_toolbar",
 
     # internal
     'chats',
@@ -50,7 +51,15 @@ INSTALLED_APPS = [
 ]
 
 
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]
+
+
 MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',

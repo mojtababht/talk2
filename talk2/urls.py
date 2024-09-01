@@ -23,6 +23,7 @@ from rest_framework.routers import DefaultRouter
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework_simplejwt.views import TokenRefreshView
+from debug_toolbar.toolbar import debug_toolbar_urls
 
 from chats.api.urls import router as chat_router, message_router
 from users.api.urls import router as user_router
@@ -58,3 +59,4 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += debug_toolbar_urls()
