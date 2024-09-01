@@ -1,0 +1,25 @@
+version: '3.9'
+
+services:
+  talk2:
+    container_name: talk2
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - 8000:8000
+    volumes:
+      - ./:app/
+    command: >
+      sh -c "python3 /app/src/manage.py runserver 0:8000 & 
+      celery -A talk2 worker  -B -l info"
+
+  redis:
+    container_name: talk2_redis
+    image: redis:7.0.8
+    restart: always
+    volumes:
+      - mehr_redis_data:/data
+    expose:
+      - "6379"
