@@ -13,6 +13,8 @@ from reusable.utils import encrypt_message
 class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
+        if not self.scope['user'].is_authenticated:
+            raise DenyConnection()
         self.chat_id = self.scope["url_route"]["kwargs"]["chat_id"]
         self.chat = await self.get_chat(self.chat_id)
         self.room_group_name = "chat_%s" % self.chat_id
@@ -80,4 +82,36 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return MessageSerializer(messages, many=True).data
 
 
+class InformationConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        if not self.scope['user'].is_authenticated:
+            raise DenyConnection()
+        self.user = self.scope['user']
+        self.name = f'infos{self.user.id}'
+        await self.channel_layer.group_add(self.name, self.channel_name)
+        await self.set_user_online()
+        await self.accept()
 
+    async def disconnect(self, close_code):
+        if self.user.is_authenticated:
+            await self.set_user_offline()
+        await self.channel_layer.group_discard(self.name, self.channel_name)
+
+    async def receive(self, text_data):
+        await self.channel_layer.group_send(self.name, {"type": "send_notification", "message": 'message'})
+
+    async def send_notification(self, event):
+        await self.send(text_data='hi')
+
+    @database_sync_to_async
+    def set_user_online(self):
+        profile = self.scope['user'].profile
+        profile.is_online = True
+        profile.save()
+
+    @database_sync_to_async
+    def set_user_offline(self):
+        profile = self.user.profile
+        profile.is_online = False
+        profile.last_online = datetime.now()
+        profile.save()
