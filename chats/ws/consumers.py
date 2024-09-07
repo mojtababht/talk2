@@ -13,11 +13,12 @@ from reusable.utils import encrypt_message
 class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
+        self.chat_id = self.scope["url_route"]["kwargs"]["chat_id"]
+        self.room_group_name = "chat_%s" % self.chat_id
         if not self.scope['user'].is_authenticated:
             raise DenyConnection()
-        self.chat_id = self.scope["url_route"]["kwargs"]["chat_id"]
+        self.user = self.scope['user']
         self.chat = await self.get_chat(self.chat_id)
-        self.room_group_name = "chat_%s" % self.chat_id
         if not self.chat:
             raise DenyConnection()
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
@@ -37,6 +38,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             data = {'user': self.scope['user'].id, 'chat': self.chat.id, 'text': message}
             await self.save_message(data)
             await self.channel_layer.group_send(self.room_group_name, {"type": "chat_message", "message": message})
+
 
     # Receive message from room group
     async def chat_message(self, event):
@@ -88,6 +90,7 @@ class InformationConsumer(AsyncWebsocketConsumer):
             raise DenyConnection()
         self.user = self.scope['user']
         self.name = f'infos{self.user.id}'
+        print(self.name, 'mmmmmmmddddddd')
         await self.channel_layer.group_add(self.name, self.channel_name)
         await self.set_user_online()
         await self.accept()
