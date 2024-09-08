@@ -5,7 +5,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from channels.exceptions import DenyConnection
 
-from .serializers import CreateMessageSerializer, MessageSerializer
+from .serializers import CreateMessageSerializer, MessageSerializer, ChatNotifSerializer
+from ..api.serializers import ChatSerializer
 from ..models import Chat, Message
 from reusable.utils import encrypt_message
 
@@ -30,7 +31,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.set_user_offline()
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-    # Receive message from WebSocket
+
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         if message := text_data_json.get("message"):
@@ -40,7 +41,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_send(self.room_group_name, {"type": "chat_message", "message": message})
 
 
-    # Receive message from room group
     async def chat_message(self, event):
         response = await self.get_messages()
         await self.send(text_data=json.dumps(response))
@@ -89,10 +89,12 @@ class InformationConsumer(AsyncWebsocketConsumer):
         self.user = self.scope['user']
         if not self.user.is_authenticated:
             raise DenyConnection()
-        self.name = f'infos{self.user.id}'
+        self.name = f'infos_{self.user.id}'
         await self.channel_layer.group_add(self.name, self.channel_name)
         await self.set_user_online()
         await self.accept()
+        data = await self.get_chats(self.user.id)
+        await self.send(text_data=json.dumps(data))
 
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
@@ -100,10 +102,18 @@ class InformationConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.name, self.channel_name)
 
     async def receive(self, text_data):
-        await self.channel_layer.group_send(self.name, {"type": "send_notification", "message": 'message'})
+        await self.channel_layer.group_send(self.name, {"type": "send_notification", 'user_id': self.user.id})
 
     async def send_notification(self, event):
-        await self.send(text_data='hi')
+        if user_id := event.get('user_id'):
+            data = await self.get_chats(user_id)
+            await self.send(text_data=json.dumps(data))
+
+
+    @database_sync_to_async
+    def get_chats(self, user_id):
+        chats = Chat.objects.filter(members__id=user_id)
+        return ChatNotifSerializer(chats, many=True, context={'user_id': user_id}).data
 
     @database_sync_to_async
     def set_user_online(self):

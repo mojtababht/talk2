@@ -8,8 +8,9 @@ def send_notifications(users_id):
     channel_layer = get_channel_layer()
 
     async def send_for_one_user(user_id):
-        await channel_layer.group_send(f'infos{user_id}', {
+        await channel_layer.group_send(f'infos_{user_id}', {
             "type": "send_notification",
+            'user_id': user_id
         })
 
     async def send_to_all(users_id):

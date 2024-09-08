@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers
 
 from ..models import Message, Chat
@@ -32,7 +33,6 @@ class MessageSerializer(serializers.ModelSerializer):
     created_at_time = serializers.TimeField(read_only=True, format='%H:%M')
     text = serializers.SerializerMethodField()
 
-
     def get_text(self, obj):
         return decrypt_message(obj.text, obj.chat.id)
 
@@ -55,7 +55,7 @@ class ChatNotifSerializer(serializers.ModelSerializer):
         if obj.name:
             name = obj.name
         else:
-            other = obj.members.exclude(id=self.context['request'].user.id).first()
+            other = obj.members.exclude(id=self.context['user_id']).first()
             if other.first_name:
                 name = other.first_name
             else:
@@ -66,20 +66,20 @@ class ChatNotifSerializer(serializers.ModelSerializer):
         if obj.avatar:
             avatar = obj.avatar
         elif obj.members.count() == 2:
-            avatar = obj.members.exclude(id=self.context['request'].user.id).first().profile.avatar
+            avatar = obj.members.exclude(id=self.context['user_id']).first().profile.avatar
         else:
             avatar = ''
         if avatar:
             if request := self.context.get("request"):
                 return request.build_absolute_uri(avatar.url)
-            return avatar
+            return settings.BASE_URL + avatar.url
         return None
 
     def get_members(self, obj):
-        members = obj.members.exclude(id=self.context['request'].user.id).all()
+        members = obj.members.exclude(id=self.context['user_id']).all()
         return MemberSerializer(members, many=True, context=self.context).data
 
     def get_unread_messages(self, obj):
-        user = self.context['user']
-        query = obj.messages.exclude(seen_by=user).all()
+        user_id = self.context['user_id']
+        query = obj.messages.exclude(seen_by__id=user_id).all()
         return MessageSerializer(query, many=True, context=self.context).data
