@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 from django.db import models
-from django.db.models import OuterRef, Subquery, Max
+from django.db.models import OuterRef, Subquery
 from django.conf import settings
 
 from .tasks import send_notifications
