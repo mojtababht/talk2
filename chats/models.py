@@ -1,10 +1,20 @@
 from uuid import uuid4
 
 from django.db import models
+from django.db.models import OuterRef, Subquery, Max
 from django.conf import settings
 
 from .tasks import send_notifications
 
+
+class ChatManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().annotate(
+            last_message=Subquery(
+                Message.objects.filter(chat=OuterRef('pk')).order_by('-created_at').values_list(
+                    'created_at')[:1]
+            )
+        ).order_by('-last_message')
 
 class Chat(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False, unique=True)
@@ -12,18 +22,16 @@ class Chat(models.Model):
     avatar = models.ImageField(null=True, blank=True)
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='chats')
 
-    class Meta:
-        ordering = ('-messages__created_at_date', '-messages__created_at_time')
+    objects = ChatManager()
+
 
 
 class Message(models.Model):
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='messages')
     text = models.CharField(max_length=256)
-    created_at_date = models.DateField(auto_now_add=True)
-    created_at_time = models.TimeField(auto_now_add=True)
-    updated_at_date = models.DateField(auto_now=True)
-    updated_at_time = models.TimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     seen_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='seen_messages')
 
     def save(self, *args, **kwargs):
@@ -32,4 +40,4 @@ class Message(models.Model):
         send_notifications.apply_async(args=(id_list,))
 
     class Meta:
-        ordering = ('-created_at_date', '-created_at_time')
+        ordering = ('-created_at',)

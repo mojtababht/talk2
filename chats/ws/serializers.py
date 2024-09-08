@@ -30,7 +30,6 @@ class CreateMessageSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     user = MemberSerializer(read_only=True)
-    created_at_time = serializers.TimeField(read_only=True, format='%H:%M')
     text = serializers.SerializerMethodField()
 
     def get_text(self, obj):
@@ -38,7 +37,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ('id', 'user', 'text', 'created_at_date', 'created_at_time', 'updated_at_date', 'updated_at_time')
+        fields = ('id', 'user', 'text', 'created_at', 'updated_at')
 
 
 class ChatNotifSerializer(serializers.ModelSerializer):
