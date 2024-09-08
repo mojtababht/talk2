@@ -86,11 +86,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 class InformationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        if not self.scope['user'].is_authenticated:
-            raise DenyConnection()
         self.user = self.scope['user']
+        if not self.user.is_authenticated:
+            raise DenyConnection()
         self.name = f'infos{self.user.id}'
-        print(self.name, 'mmmmmmmddddddd')
         await self.channel_layer.group_add(self.name, self.channel_name)
         await self.set_user_online()
         await self.accept()
