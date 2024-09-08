@@ -188,7 +188,7 @@ SIMPLE_JWT = {
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-BASE_URL = "https:127.0.0.1:8000"
+BASE_URL = 'http://127.0.0.1:8000'
 STATIC_URL = 'static/'
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "media/"
