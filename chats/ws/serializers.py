@@ -6,11 +6,23 @@ from reusable.utils import decrypt_message
 
 
 class ProfileSerializer(serializers.Serializer):
+    avatar = serializers.SerializerMethodField()
     last_online = serializers.DateTimeField()
     is_online = serializers.BooleanField()
 
     class Meta:
         ref_name = 'ws-chat-profile'
+
+    def get_avatar(self, obj):
+        if obj.avatar:
+            avatar = obj.avatar
+        else:
+            avatar = ''
+        if avatar:
+            if request := self.context.get("request"):
+                return request.build_absolute_uri(avatar.url)
+            return settings.BASE_URL + avatar.url
+        return None
 
 
 class MemberSerializer(serializers.Serializer):
