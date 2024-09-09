@@ -25,6 +25,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.set_user_online()
         await self.accept()
+        await self.channel_layer.group_send(self.room_group_name, {"type": "chat_message"})
 
     async def disconnect(self, close_code):
         if self.scope['user'].is_authenticated:
