@@ -1,13 +1,14 @@
 import json
 
 from django.utils.timezone import datetime
+from django.contrib.auth import get_user_model
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from channels.exceptions import DenyConnection
 
 from .serializers import CreateMessageSerializer, MessageSerializer, ChatNotifSerializer
-from ..api.serializers import ChatSerializer
 from ..models import Chat, Message
+from ..tasks import send_notifications
 from reusable.utils import encrypt_message
 
 
@@ -23,13 +24,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not self.chat:
             raise DenyConnection()
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-        await self.set_user_online()
         await self.accept()
         await self.channel_layer.group_send(self.room_group_name, {"type": "chat_message"})
 
     async def disconnect(self, close_code):
-        if self.scope['user'].is_authenticated:
-            await self.set_user_offline()
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
 
@@ -61,19 +59,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return chat.name
 
     @database_sync_to_async
-    def set_user_online(self):
-        profile = self.scope['user'].profile
-        profile.is_online = True
-        profile.save()
-
-    @database_sync_to_async
-    def set_user_offline(self):
-        profile = self.scope['user'].profile
-        profile.is_online = False
-        profile.last_online = datetime.now()
-        profile.save()
-
-    @database_sync_to_async
     def save_message(self, data):
         serializer = CreateMessageSerializer(data=data)
         serializer.is_valid()
@@ -93,6 +78,7 @@ class InformationConsumer(AsyncWebsocketConsumer):
         self.name = f'infos_{self.user.id}'
         await self.channel_layer.group_add(self.name, self.channel_name)
         await self.set_user_online()
+        await self.notif_after_online_offline()
         await self.accept()
         data = await self.get_chats(self.user.id)
         await self.send(text_data=json.dumps(data))
@@ -100,6 +86,7 @@ class InformationConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
             await self.set_user_offline()
+            await self.notif_after_online_offline()
         await self.channel_layer.group_discard(self.name, self.channel_name)
 
     async def receive(self, text_data):
@@ -118,9 +105,10 @@ class InformationConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def set_user_online(self):
-        profile = self.scope['user'].profile
+        profile = self.user.profile
         profile.is_online = True
         profile.save()
+
 
     @database_sync_to_async
     def set_user_offline(self):
@@ -128,3 +116,9 @@ class InformationConsumer(AsyncWebsocketConsumer):
         profile.is_online = False
         profile.last_online = datetime.now()
         profile.save()
+
+    @database_sync_to_async
+    def notif_after_online_offline(self):
+        users = get_user_model().objects.filter(chats__in=self.user.chats.all())
+        users_id = list(users.values_list('id', flat=True))
+        send_notifications.apply_async(args=(users_id,))
