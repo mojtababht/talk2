@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Q
 from rest_framework import serializers
 
 from ..models import Message, Chat
@@ -43,13 +44,17 @@ class CreateMessageSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     user = MemberSerializer(read_only=True)
     text = serializers.SerializerMethodField()
+    seen = serializers.SerializerMethodField()
 
     def get_text(self, obj):
         return decrypt_message(obj.text, obj.chat.id)
 
+    def get_seen(self, obj):
+        return obj.user == self.context['user'] or self.context['user'] in obj.seen_by.all()
+
     class Meta:
         model = Message
-        fields = ('id', 'user', 'text', 'created_at', 'updated_at')
+        fields = ('id', 'user', 'text', 'created_at', 'updated_at', 'seen')
 
 
 class ChatNotifSerializer(serializers.ModelSerializer):
@@ -92,5 +97,5 @@ class ChatNotifSerializer(serializers.ModelSerializer):
 
     def get_unread_messages(self, obj):
         user_id = self.context['user_id']
-        query = obj.messages.exclude(seen_by__id=user_id).all()
+        query = obj.messages.exclude(Q(seen_by__id=user_id) | Q(user=user_id)).all()
         return MessageSerializer(query, many=True, context=self.context).data

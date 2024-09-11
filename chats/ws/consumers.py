@@ -67,7 +67,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_messages(self):
         messages = Message.objects.filter(chat=self.chat).select_related('chat')
-        return MessageSerializer(messages, many=True).data
+        return MessageSerializer(messages, many=True, context={'user': self.user}).data
 
 
 class InformationConsumer(AsyncWebsocketConsumer):
@@ -101,7 +101,7 @@ class InformationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_chats(self, user_id):
         chats = Chat.objects.filter(members__id=user_id)
-        return ChatNotifSerializer(chats, many=True, context={'user_id': user_id}).data
+        return ChatNotifSerializer(chats, many=True, context={'user_id': user_id, 'user': self.user}).data
 
     @database_sync_to_async
     def set_user_online(self):
