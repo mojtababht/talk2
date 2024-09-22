@@ -1,4 +1,5 @@
 import json
+import asyncio
 
 from django.utils.timezone import datetime
 from django.contrib.auth import get_user_model
@@ -38,6 +39,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             data = {'user': self.scope['user'].id, 'chat': self.chat.id, 'text': message}
             await self.save_message(data)
             await self.channel_layer.group_send(self.room_group_name, {"type": "chat_message", "message": message})
+        if seen_messages_id_list := text_data_json.get("seen"):
+            asyncio.create_task(self.seen_messages(seen_messages_id_list, self.user.id))
+            await self.channel_layer.group_send(self.room_group_name, {"type": "chat_message"})
+
 
 
     async def chat_message(self, event):
@@ -68,6 +73,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def get_messages(self):
         messages = Message.objects.filter(chat=self.chat).select_related('chat')
         return MessageSerializer(messages, many=True, context={'user': self.user}).data
+
+    @database_sync_to_async
+    def seen_messages(self, messages_id_list, user_id):
+        messages = Message.objects.filter(id__in=messages_id_list)
+        for message in messages:
+            message.seen_by.add(user_id)
 
 
 class InformationConsumer(AsyncWebsocketConsumer):
